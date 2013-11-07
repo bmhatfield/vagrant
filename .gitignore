@@ -29,6 +29,7 @@ pkg/*
 tags
 Gemfile.lock
 test/tmp/
+*.gem
 
 # Documentation
 _site/*

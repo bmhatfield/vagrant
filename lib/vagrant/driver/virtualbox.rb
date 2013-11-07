@@ -45,7 +45,8 @@ module Vagrant
         driver_map   = {
           "4.0" => VirtualBox_4_0,
           "4.1" => VirtualBox_4_1,
-          "4.2" => VirtualBox_4_2
+          "4.2" => VirtualBox_4_2,
+          "4.3" => VirtualBox_4_2
         }
 
         driver_klass = nil
