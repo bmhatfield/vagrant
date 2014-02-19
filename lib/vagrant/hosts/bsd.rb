@@ -22,8 +22,6 @@ module Vagrant
       def initialize(*args)
         super
 
-        create_vagrant_sudoers_policy
-
         @logger = Log4r::Logger.new("vagrant::hosts::bsd")
         @nfs_restart_command = "sudo nfsd restart"
         @nfs_exports_template = "nfs/exports"
@@ -118,6 +116,8 @@ module Vagrant
       protected
 
       def nfs_cleanup(id)
+        create_vagrant_sudoers_policy
+
         return if !File.exist?("/etc/exports")
 
         # Use sed to just strip out the block of code which was inserted
