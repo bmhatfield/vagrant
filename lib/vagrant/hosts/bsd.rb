@@ -42,18 +42,24 @@ module Vagrant
 
           # To avoid breaking sudo, we must create this directory before updating /etc/sudoers
           @ui.info "creating #{sudoersd_dir}"
-          system "sudo mkdir #{sudoersd_dir}"
+          result = system "sudo mkdir #{sudoersd_dir}"
+          raise StandardError, "sudo mkdir #{sudoersd_dir} failed" unless result
 
           # Use backticks to capture stdout
           sudoers = `sudo cat #{sudoers_file}`
-          @ui.info "Adding '#{sudoers_include}' to #{sudoers_file}"
-          system "echo '#{sudoers_include}' | sudo tee -a #{sudoers_file}"
+          unless sudoers.include? sudoers_include
+            @ui.info "Adding '#{sudoers_include}' to #{sudoers_file}"
+            result = system "echo '#{sudoers_include}' | sudo tee -a #{sudoers_file}"
+            raise StandardError, "echo '#{sudoers_include}' | sudo tee -a #{sudoers_file} failed" unless result
+          end
 
           @ui.info "Adding #{sudoersd_dir}/vagrant file"
-          system "echo '#{content}' | sudo tee #{vagrant_sudoersd_filename}"
+          result = system "echo '#{content}' | sudo tee #{vagrant_sudoersd_filename}"
+          raise StandardError, "echo '#{content}' | sudo tee #{vagrant_sudoersd_filename} failed" unless result
 
           @ui.info "Updating #{sudoersd_dir}/vagrant permissions to 0440"
-          system "sudo chmod 0440 #{vagrant_sudoersd_filename}"
+          result = system "sudo chmod 0440 #{vagrant_sudoersd_filename}"
+          raise StandardError,  "sudo chmod 0440 #{vagrant_sudoersd_filename} failed" unless result
         end
       end
 
