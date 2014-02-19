@@ -27,6 +27,42 @@ module Vagrant
         @nfs_exports_template = "nfs/exports"
       end
 
+      # Create the sudoers.d directory, update /etc/sudoers, and create /etc/sudoers.d/vagrant
+      # https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man5/sudoers.5.html
+      def create_vagrant_sudoers_policy
+        sudoersd_dir = '/etc/sudoers.d'
+
+        # This block should only run the first time vagrant is run on a new host
+        unless File.exists? "#{sudoersd_dir}/vagrant"
+          sudoers_file = '/etc/sudoers'
+          sudoers_include = '\n#includedir /etc/sudoers.d'
+          vagrant_sudoersd_filename = "#{sudoersd_dir}/vagrant"
+          # We cannot use heredoc since echo doesn't handle the multiline input properly
+          content = "# Allow passwordless startup of Vagrant when using NFS.\nCmnd_Alias VAGRANT_EXPORTS_ADD = /usr/bin/su root -c echo '*' >> /etc/exports\nCmnd_Alias VAGRANT_NFSD = /sbin/nfsd restart\nCmnd_Alias VAGRANT_EXPORTS_REMOVE = /usr/bin/sed -e /*/ d -ibak /etc/exports\n%staff ALL=(root) NOPASSWD: VAGRANT_EXPORTS_ADD, VAGRANT_NFSD, VAGRANT_EXPORTS_REMOVE\n"
+
+          # To avoid breaking sudo, we must create this directory before updating /etc/sudoers
+          @ui.info "creating #{sudoersd_dir}"
+          result = system "sudo mkdir #{sudoersd_dir}"
+          raise StandardError, "sudo mkdir #{sudoersd_dir} failed" unless result
+
+          # Use backticks to capture stdout
+          sudoers = `sudo cat #{sudoers_file}`
+          unless sudoers.include? sudoers_include
+            @ui.info "Adding '#{sudoers_include}' to #{sudoers_file}"
+            result = system "echo '#{sudoers_include}' | sudo tee -a #{sudoers_file}"
+            raise StandardError, "echo '#{sudoers_include}' | sudo tee -a #{sudoers_file} failed" unless result
+          end
+
+          @ui.info "Adding #{sudoersd_dir}/vagrant file"
+          result = system "echo '#{content}' | sudo tee #{vagrant_sudoersd_filename}"
+          raise StandardError, "echo '#{content}' | sudo tee #{vagrant_sudoersd_filename} failed" unless result
+
+          @ui.info "Updating #{sudoersd_dir}/vagrant permissions to 0440"
+          result = system "sudo chmod 0440 #{vagrant_sudoersd_filename}"
+          raise StandardError,  "sudo chmod 0440 #{vagrant_sudoersd_filename} failed" unless result
+        end
+      end
+
       def nfs?
         retryable(:tries => 10, :on => TypeError) do
           system("which nfsd > /dev/null 2>&1")
@@ -86,6 +122,8 @@ module Vagrant
       protected
 
       def nfs_cleanup(id)
+        create_vagrant_sudoers_policy
+
         return if !File.exist?("/etc/exports")
 
         # Use sed to just strip out the block of code which was inserted
