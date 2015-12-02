@@ -17,6 +17,7 @@ module Vagrant
         attr_accessor :environment
         attr_accessor :encrypted_data_bag_secret_key_path
         attr_accessor :encrypted_data_bag_secret
+        attr_accessor :client_options
 
         # Provide defaults in such a way that they won't override the instance
         # variable. This is so merging continues to work properly.
@@ -90,7 +91,7 @@ module Vagrant
 
       def run_chef_client
         command_env = config.binary_env ? "#{config.binary_env} " : ""
-        command = "#{command_env}#{chef_binary_path("chef-client")} -c #{config.provisioning_path}/client.rb -j #{config.provisioning_path}/dna.json"
+        command = "#{command_env}#{chef_binary_path("chef-client")} -c #{config.provisioning_path}/client.rb -j #{config.provisioning_path}/dna.json #{config.client_options}"
 
         config.attempts.times do |attempt|
           if attempt == 0
