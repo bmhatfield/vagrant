@@ -2,7 +2,7 @@ $:.unshift File.expand_path("../lib", __FILE__)
 require "vagrant/version"
 
 Gem::Specification.new do |s|
-  s.name          = "bmhatfield-vagrant"
+  s.name          = "crashlytics-vagrant"
   s.version       = Vagrant::VERSION
   s.platform      = Gem::Platform::RUBY
   s.authors       = ["Mitchell Hashimoto", "John Bender"]
@@ -67,4 +67,3 @@ Gem::Specification.new do |s|
   s.executables   = unignored_files.map { |f| f[/^bin\/(.*)/, 1] }.compact
   s.require_path  = 'lib'
 end
-
